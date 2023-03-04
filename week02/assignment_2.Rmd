@@ -1,0 +1,59 @@
+---
+title: "assignment_2"
+output: html_document
+date: "2023-03-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Assignment 2
+
+##Part 1
+```{r}
+suppressPackageStartupMessages({
+  library(AnnotationHub)
+  library(ensembldb)
+  library(GenomicRanges)
+  library(epiwraps)
+})
+```
+
+#Annotation Hub
+```{r}
+ah <- AnnotationHub()
+# to query the AH programmatically:
+q <- query(ah, c("Name", "ensembl"))
+# to browse the AnnotationHub interactively:
+#display(ah)
+
+#Fetch Mus Musculus 
+ensdb_mus <- ah[["AH89211"]]
+ensdb_mus
+
+#Fetch dna_sm
+ensdb_mus2bit <- ah[["AH49775"]]
+ensdb_mus2bit
+
+#Fetch Drospophila melanogaster 
+ensdb_dm <- ah[["AH49674"]]
+ensdb_dm
+```
+##Part 2
+(unique(c("a",..)) #function eg in exercises)
+
+```{r}
+##Number ensembl gene IDs and gene symbols (name) protein coding genes
+exs <- genes(ensdb_mus, column=c("gene_id", "symbol"))
+exs
+
+##Plot spliced length of protein-coding transcripts
+exsPerTx <- exonsBy(ensdb_mus, column=c("tx_id","tx_biotype"),  
+                    filter=TxBiotypeFilter("protein_coding"))
+exsPerTx
+
+exon_mus <- width(exsPerTx)
+hist(sum(exon_mus))
+```
+
