@@ -1,0 +1,104 @@
+---
+title: "assignment_3"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-03-10"
+---
+
+##!! bash not recognized as internal or external comment --> could not knit 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+eval = FALSE to not run everything again 
+```{r}
+suppressPackageStartupMessages({
+  library(AnnotationHub)
+  library(Rsubread)
+  library(rtracklayer)
+  library(Biostrings)
+  library(Rfastp)
+  library(epiwraps)
+})
+ah <- AnnotationHub()
+```
+
+#Download raw reads:
+```{r, eval=FALSE}
+options(timeout=3600)
+dir.create("raw")
+download.file("https://www.encodeproject.org/files/ENCFF127RRR/@@download/ENCFF127RRR.fastq.gz", dest="raw/Myc.fastq.gz")
+```
+
+
+# Reads QC and trimming
+## Using fastqc
+```{bash engine.opts='-l'}
+mkdir -p raw_fastqc
+fastqc -o raw_fastqc --threads 4 raw/*.fastq.gz
+```
+
+```{bash engine.opts='-l'}
+multiqc -o raw_fastqc raw_fastqc
+```
+
+# Trimming (need first block?)
+```{bash engine.opts='-l'}
+mkdir -p trimmed
+# this would be for a single sample:
+trimmomatic SE -threads 4 -summary trimmed/Myc.stats -phred33 raw/Myc.fastq.gz trimmed/Myc.fastq.gz ILLUMINACLIP:TruSeq3-SE:2:15:4:4:true LEADING:20 TRAILING:20 SLIDINGWINDOW:4:15 MINLEN:25
+```
+
+```{r}
+dir.create("rfastp.trimmed")
+qc <- lapply(c(Myc="raw/Myc.fastq.gz"), FUN=function(x){
+  Rfastp::rfastp(x, thread=4, overrepresentationAnalysis=TRUE,
+                 outputFastq=file.path("rfastp.trimmed/",gsub("\\.fastq\\.gz$","",basename(x))))
+})
+```
+
+```{r}
+Rfastp::curvePlot(qc$Myc, curve="content_curves")
+```
+
+# Alignment
+```{r}
+# we get the genome sequence from AnnotationHub
+genome <- ah[["AH49674"]]
+# we create a new directory that will contain the genome index
+dir.create("BDGP6_genome")
+# we write the genome sequence in fasta format
+export(import.2bit(genome), "BDGP6_genome/genome.fasta.gz", compress=TRUE)
+# we build a Rsubread index
+Rsubread::buildindex("BDGP6_genome/rsubread", reference="BDGP6_genome/genome.fasta.gz")
+```
+
+```{r}
+dir.create("aligned")
+align.stats <- Rsubread::align(index="BDGP6_genome/rsubread", type="dna",
+                               readfile1=c("rfastp.trimmed/Myc_R1.fastq.gz"),
+                               output_file=c("aligned/Myc.bam"),
+                               nthreads=6, sortReadsByCoordinates=TRUE)
+align.stats
+```
+
+# Peak calling
+```{bash engine.opts='-l'}
+mkdir -p peaks
+macs2 callpeak --outdir peaks -n Myc --gsize dm -t aligned/Myc.bam 
+# macs3 works in the same way
+```
+
+```{r}
+peaks <- rtracklayer::import("peaks/Myc_peaks.narrowPeak")
+source("peaks/Myc_model.r")
+```
+
+# PLot 
+
+```{r}
+head(peaks)
+region <- as.character(granges(peaks[1]))
+plotSignalTracks(c(Myc="aligned/Myc.bam"), region=region)
+```
