@@ -1,0 +1,51 @@
+---
+title: "assigment_4"
+output:
+  html_document: default
+  pdf_document: default
+date: "2023-03-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(AnnotationHub)
+  library(rtracklayer)
+  library(epiwraps)
+  library(GenomicRanges)
+})
+ah <- AnnotationHub()
+```
+
+#Download peaks (bed like format)
+```{r}
+download.file("https://www.encodeproject.org/files/ENCFF340DWL/@@download/ENCFF340DWL.bed.gz", "p300.narrowpeak")
+download.file("https://www.encodeproject.org/files/ENCFF247GVM/@@download/ENCFF247GVM.bed.gz", "H3K4me3.narrowpeak")
+download.file("https://www.encodeproject.org/files/ENCFF718GBC/@@download/ENCFF718GBC.bed.gz", "H3K4me1.narrowpeak")
+download.file("https://www.encodeproject.org/files/ENCFF585BJJ/@@download/ENCFF585BJJ.bed.gz", "H3K27ac.narrowpeak")
+download.file("https://www.encodeproject.org/files/ENCFF229LHV/@@download/ENCFF229LHV.bed.gz", "H3K27me3.narrowpeak")
+```
+
+#proportion overlap marks (4 in total) 
+```{r}
+peaks_H3K4me3 <- rtracklayer::import("H3K4me3.narrowpeak")
+peaks_H3K4me1 <- rtracklayer::import("H3K4me1.narrowpeak")
+peaks_H3K27ac <- rtracklayer::import("H3K27ac.narrowpeak")
+peaks_H3K27me3 <- rtracklayer::import("H3K27me3.narrowpeak")
+p300 <-  rtracklayer::import("p300.narrowpeak")
+proms <- promoters(p300, upstream=1000, downstream=500)
+
+peaks_H3K4me3OverlapsPromoters <- overlapsAny(peaks_H3K4me3, proms)
+sum(peaks_H3K4me3OverlapsPromoters)
+peaks_H3K4me1OverlapsPromoters <- overlapsAny(peaks_H3K4me1, proms)
+sum(peaks_H3K4me1OverlapsPromoters)
+peaks_H3K27acOverlapsPromoters <- overlapsAny(peaks_H3K27ac, proms)
+sum(peaks_H3K27acOverlapsPromoters)
+peaks_H3K27me3OverlapsPromoters <- overlapsAny(peaks_H3K27me3, proms)
+sum(peaks_H3K27me3OverlapsPromoters)
+```
+
+
