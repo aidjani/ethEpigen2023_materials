@@ -1,0 +1,44 @@
+---
+title: "assignment_5"
+output: html_document
+date: "2023-03-27"
+---
+```{r}
+suppressPackageStartupMessages({
+  library(AnnotationHub)
+  library(ensembldb)
+  library(GenomicRanges)
+  library(epiwraps)
+  library(rtracklayer)
+  library(ggplot2)
+})
+ah <- AnnotationHub()
+ensdb <- ah[["AH89211"]]
+```
+
+#Download data for mESC
+```{r}
+download.file("https://www.encodeproject.org/files/ENCFF247GVM/@@download/ENCFF247GVM.bed.gz", "H3K4me3.narrowpeak")
+download.file("https://www.encodeproject.org/files/ENCFF229LHV/@@download/ENCFF229LHV.bed.gz", "H3K27me3.narrowpeak")
+```
+# Download data for differentiated cells
+```{r}
+download.file("https://www.encodeproject.org/files/ENCFF326VMV/@@download/ENCFF326VMV.bed.gz", "H3K4me3_smoothmusclecell")
+download.file("https://www.encodeproject.org/files/ENCFF515UKM/@@download/ENCFF515UKM.bed.gz", "H3K27me3_smoothmusclecell")
+```
+
+#Identifying bivalent domains 
+```{r}
+peakfiles <- list.files("peaks", full.names = TRUE)
+peakfiles
+names(peakfiles) <- gsub("\\.bed","",basename(peakfiles))
+
+peaks <- lapply(peakfiles, FUN=rtracklayer::import, format="narrowPeak")
+peaks
+```
+#Visualizing bivalent domains 
+```{r}
+regionOverlaps(peaks)
+regionUpset(peaks, nsets=length(peaks))
+#Number mESC bivalent domains opverlapping in both: 260
+```
