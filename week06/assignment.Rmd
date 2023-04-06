@@ -1,0 +1,71 @@
+---
+title: "assignment"
+output: html_document
+date: "2023-04-05"
+---
+
+```{r}
+suppressPackageStartupMessages({
+  library(AnnotationHub)
+  library(GenomicRanges)
+  #library(ggplot2)
+  #library(memes) # for the meme-based methods -- COMMENT OUT when using alternatives
+  #library(motifmatchr)
+  library(Biostrings) # for handling sequences
+  library(MotifDb) # database of motifs
+  #library(TFBSTools) # for handling some motif formats
+  #library(universalmotif) # for converting motifs to various formats
+  #library(PWMEnrich) # for R-based motif enrichment analysis
+   library(devtools)
+})
+```
+# download the peaks for the transcription factor in the specified cell type
+```{r}
+download.file("https://www.encodeproject.org/files/ENCFF680TBL/@@download/ENCFF680TBL.bed.gz", "CREB1_bed") 
+peaks <- rtracklayer::import("CREB1_bed", format="NarrowPeak")
+peaks_CREB1_bed <- peaks[seqnames(peaks)=="1"]
+```
+
+```{r}
+ah <- AnnotationHub()
+#display(ah)
+```
+
+#Identify the instances of the factor's motif
+```{r}
+# Define the genome
+ah <- AnnotationHub(localHub=FALSE)
+genome <- ah[["AH6057"]]
+
+
+# We search for "CREB1" in the motif database
+##motifs <- query(MotifDb, "CREB1")
+##creb1_sequences <- getSeq(genome, "CREB1")
+# Identify all instances of the CREB1 motif in the chromosome
+##creb_motif <- motifs[["Mmusculus-HOCOMOCOv10-CREB1_MOUSE.H10MO.B"]]
+##creb_matches <- matchPWM(creb_motif, creb1_sequences)
+```
+
+#Proportions that contain a motif for the factor 
+```{r}
+
+# Calculate proportion of peaks containing the motif
+##num_peaks <- length(peaks_CREB1_bed)
+##num_peaks_with_motif <- length(which(lengths(creb_matches) > 0))
+##prop_peaks_with_motif <- round(num_peaks_with_motif / num_peaks * 100, 2)
+
+##cat(paste("Of the", num_peaks, "peaks,", num_peaks_with_motif, "(", prop_peaks_with_motif, "%) contain the CREB1 motif."))
+```
+#Proportion bound to factor 
+```{r}
+# Determine the number of instances that overlap with the peaks
+##peaks_GRanges <- as(peaks_CREB1_bed, "GRanges")
+##motif_GRanges <- makeGRangesFromMatches(creb_matches)
+##motif_peaks_overlap <- countOverlaps(motif_GRanges, peaks_GRanges)
+
+# Calculate the proportion of instances that overlap with the peaks
+##prop_overlap <- motif_peaks_overlap / length(motif_GRanges)
+
+##cat(sprintf("Of all instances of the motif, %d (%.2f%%) overlap a peak.", motif_peaks_overlap, prop_overlap * 100))
+```
+
